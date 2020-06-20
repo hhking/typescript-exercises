@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import { type } from 'os';
 
 /*
 
@@ -71,8 +72,19 @@ type ApiResponse<T> = (
     }
 );
 
-function promisify(arg: unknown): unknown {
-    return null;
+type PromisifyOldFunctionParam<T> = (callback: (response: ApiResponse<T>) => void) => void;
+type PromisifyNewFunction<T> = () => Promise<T>;
+
+function promisify<T>(oldFunc: PromisifyOldFunctionParam<T>): PromisifyNewFunction<T> {
+    return () => new Promise((resolve, reject) => {
+        oldFunc(response => {
+            if (response.status === 'error') {
+                reject(new Error(response.error));
+                return;
+            }
+            resolve(response.data);
+        });
+    });
 }
 
 const oldApi = {
